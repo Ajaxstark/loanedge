@@ -4,53 +4,85 @@ namespace Modules\Lead\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Modules\Lead\Models\Lead;
+use Illuminate\Support\Facades\Validator;
 
 class LeadController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of leads.
      */
     public function index()
     {
-        return view('lead::index');
+        $leads = Lead::latest()->get();
+
+        return response()->json([
+            'leads' => $leads,
+        ], 200);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Store a newly created lead.
      */
-    public function create()
+    public function store(Request $request)
     {
-        return view('lead::create');
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:15',
+            'email' => 'nullable|email',
+            'loan_amount_required' => 'required|numeric',
+            'loan_type' => 'nullable|string',
+            'source' => 'required|in:website,walk_in,dsa,referral',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $lead = Lead::create($request->all());
+
+        return response()->json([
+            'message' => 'Lead created successfully',
+            'lead' => $lead,
+        ], 201);
     }
 
     /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request) {}
-
-    /**
-     * Show the specified resource.
+     * Show a specific lead.
      */
     public function show($id)
     {
-        return view('lead::show');
+        $lead = Lead::findOrFail($id);
+
+        return response()->json([
+            'lead' => $lead,
+        ], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Update a specific lead.
      */
-    public function edit($id)
+    public function update(Request $request, $id)
     {
-        return view('lead::edit');
+        $lead = Lead::findOrFail($id);
+        $lead->update($request->all());
+
+        return response()->json([
+            'message' => 'Lead updated successfully',
+            'lead' => $lead,
+        ], 200);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Remove a specific lead.
      */
-    public function update(Request $request, $id) {}
+    public function destroy($id)
+    {
+        $lead = Lead::findOrFail($id);
+        $lead->delete();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy($id) {}
+        return response()->json([
+            'message' => 'Lead deleted successfully',
+        ], 200);
+    }
 }
