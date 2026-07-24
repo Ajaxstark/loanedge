@@ -1,5 +1,6 @@
 {
     "User": true,
     "Lead": true,
-    "Product": true
+    "Product": true,
+    "KYC": true
 }
