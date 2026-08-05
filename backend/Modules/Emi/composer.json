@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/emi",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Emi\\": "app/",
+            "Modules\\Emi\\Database\\Factories\\": "database/factories/",
+            "Modules\\Emi\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Emi\\Tests\\": "tests/"
+        }
+    }
+}

@@ -1,0 +1,11 @@
+{
+    "name": "Emi",
+    "alias": "emi",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Emi\\Providers\\EmiServiceProvider"
+    ],
+    "files": []
+}
