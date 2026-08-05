@@ -8,10 +8,24 @@ use Modules\KYC\Models\Document;
 
 class KYCController extends Controller
 {
+    // Sabhi documents (bina leadId ke) - Sidebar KYC 
+    public function indexAll()
+    {
+        $documents = Document::with('lead')->latest()->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $documents
+        ]);
+    }
+
     // Ek lead ke saare documents dikhao
     public function index($leadId)
     {
-        $documents = Document::where('lead_id', $leadId)->get();
+        $documents = Document::with('lead')
+            ->where('lead_id', $leadId)
+            ->latest()
+            ->get();
 
         return response()->json([
             'success' => true,
