@@ -8,6 +8,7 @@ import Underwriting from './pages/Underwriting';
 import Approval from './pages/Approval';
 import Loan from './pages/Loan';
 import Emi from './pages/Emi';
+import Collection from './pages/Collection';
 
 function App() {
   return (
@@ -47,6 +48,10 @@ function App() {
         {/* EMI */}
         <Route path="/emi" element={<Emi />} />
         <Route path="/emi/:loanId" element={<Emi />} />
+
+        {/* Collection */}
+        <Route path="/collection" element={<Collection />} />
+        <Route path="/collection/:loanId" element={<Collection />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
