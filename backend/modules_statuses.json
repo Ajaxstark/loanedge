@@ -6,5 +6,6 @@
     "Underwriting": true,
     "Approval": true,
     "Loan": true,
-    "Emi": true
+    "Emi": true,
+    "Collection": true
 }
