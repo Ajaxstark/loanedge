@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/underwriting",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\Underwriting\\": "app/",
+            "Modules\\Underwriting\\Database\\Factories\\": "database/factories/",
+            "Modules\\Underwriting\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\Underwriting\\Tests\\": "tests/"
+        }
+    }
+}

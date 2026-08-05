@@ -1,0 +1,11 @@
+{
+    "name": "Underwriting",
+    "alias": "underwriting",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Underwriting\\Providers\\UnderwritingServiceProvider"
+    ],
+    "files": []
+}
