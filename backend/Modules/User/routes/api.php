@@ -8,6 +8,7 @@ Route::prefix('v1')->group(function () {
     // Public routes — no login required
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+    
 
     // Protected routes — login required
     Route::middleware(['auth:sanctum'])->group(function () {
