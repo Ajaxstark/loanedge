@@ -2,5 +2,9 @@
     "User": true,
     "Lead": true,
     "Product": true,
-    "KYC": true
+    "KYC": true,
+    "Underwriting": true,
+    "Approval": true,
+    "Loan": true,
+    "Emi": true
 }
