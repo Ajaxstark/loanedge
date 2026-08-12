@@ -1,0 +1,11 @@
+{
+    "name": "CustomerAuth",
+    "alias": "customerauth",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\CustomerAuth\\Providers\\CustomerAuthServiceProvider"
+    ],
+    "files": []
+}

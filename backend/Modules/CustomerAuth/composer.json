@@ -1,0 +1,30 @@
+{
+    "name": "nwidart/customerauth",
+    "description": "",
+    "authors": [
+        {
+            "name": "Nicolas Widart",
+            "email": "n.widart@gmail.com"
+        }
+    ],
+    "extra": {
+        "laravel": {
+            "providers": [],
+            "aliases": {
+
+            }
+        }
+    },
+    "autoload": {
+        "psr-4": {
+            "Modules\\CustomerAuth\\": "app/",
+            "Modules\\CustomerAuth\\Database\\Factories\\": "database/factories/",
+            "Modules\\CustomerAuth\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Modules\\CustomerAuth\\Tests\\": "tests/"
+        }
+    }
+}

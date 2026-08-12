@@ -7,5 +7,6 @@
     "Approval": true,
     "Loan": true,
     "Emi": true,
-    "Collection": true
+    "Collection": true,
+    "CustomerAuth": true
 }
