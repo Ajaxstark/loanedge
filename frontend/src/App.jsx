@@ -10,6 +10,12 @@ import Loan from './pages/Loan';
 import Emi from './pages/Emi';
 import Collection from './pages/Collection';
 
+// Customer-facing pages
+import CustomerRegister from './pages/customer/CustomerRegister';
+import CustomerVerifyOtp from './pages/customer/CustomerVerifyOtp';
+import CustomerLogin from './pages/customer/CustomerLogin';
+import CustomerDashboard from './pages/customer/CustomerDashboard';
+
 function App() {
   return (
     <BrowserRouter>
@@ -17,7 +23,7 @@ function App() {
         {/* Default redirect */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-        {/* Auth */}
+        {/* Staff Auth */}
         <Route path="/login" element={<Login />} />
 
         {/* Dashboard */}
@@ -52,6 +58,14 @@ function App() {
         {/* Collection */}
         <Route path="/collection" element={<Collection />} />
         <Route path="/collection/:loanId" element={<Collection />} />
+
+        {/* Customer Portal — Auth */}
+        <Route path="/customer/register" element={<CustomerRegister />} />
+        <Route path="/customer/verify-otp" element={<CustomerVerifyOtp />} />
+        <Route path="/customer/login" element={<CustomerLogin />} />
+
+        {/* Customer Portal — Dashboard */}
+        <Route path="/customer/dashboard" element={<CustomerDashboard />} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
