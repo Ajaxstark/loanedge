@@ -15,7 +15,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $products
+            'data' => $products,
         ]);
     }
 
@@ -26,19 +26,22 @@ class ProductController extends Controller
             'name' => 'required|string|max:255',
             'loan_type' => 'required|in:personal,business,gold,vehicle',
             'interest_rate' => 'required|numeric|min:0|max:999.99',
+
             'min_amount' => 'required|numeric|min:0',
-            'max_amount' => 'required|numeric|min:0',
+            'max_amount' => 'required|numeric|gte:min_amount',
+
             'min_tenure_months' => 'required|integer|min:1',
-            'max_tenure_months' => 'required|integer|min:1',
-            'status' => 'in:active,inactive',
+            'max_tenure_months' => 'required|integer|gte:min_tenure_months',
+
+            'status' => 'sometimes|in:active,inactive',
         ]);
 
         $product = LoanProduct::create($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Loan product created successfully',
-            'data' => $product
+            'message' => 'Loan product created successfully.',
+            'data' => $product,
         ], 201);
     }
 
@@ -49,7 +52,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $product
+            'data' => $product,
         ]);
     }
 
@@ -66,15 +69,46 @@ class ProductController extends Controller
             'max_amount' => 'sometimes|required|numeric|min:0',
             'min_tenure_months' => 'sometimes|required|integer|min:1',
             'max_tenure_months' => 'sometimes|required|integer|min:1',
-            'status' => 'in:active,inactive',
+            'status' => 'sometimes|in:active,inactive',
         ]);
+
+        /*
+         * PATCH request mein sirf ek side aa sakti hai,
+         * isliye final values combine karke range validate karenge.
+         */
+        $minAmount = (float) ($validated['min_amount'] ?? $product->min_amount);
+        $maxAmount = (float) ($validated['max_amount'] ?? $product->max_amount);
+
+        if ($maxAmount < $minAmount) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Maximum amount must be greater than or equal to minimum amount.',
+            ], 422);
+        }
+
+        $minTenure = (int) (
+            $validated['min_tenure_months'] ??
+            $product->min_tenure_months
+        );
+
+        $maxTenure = (int) (
+            $validated['max_tenure_months'] ??
+            $product->max_tenure_months
+        );
+
+        if ($maxTenure < $minTenure) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Maximum tenure must be greater than or equal to minimum tenure.',
+            ], 422);
+        }
 
         $product->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Loan product updated successfully',
-            'data' => $product
+            'message' => 'Loan product updated successfully.',
+            'data' => $product,
         ]);
     }
 
@@ -86,7 +120,7 @@ class ProductController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Loan product deleted successfully'
+            'message' => 'Loan product deleted successfully.',
         ]);
     }
 }
