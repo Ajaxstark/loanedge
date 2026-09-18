@@ -8,5 +8,6 @@
     "Loan": true,
     "Emi": true,
     "Collection": true,
-    "CustomerAuth": true
+    "CustomerAuth": true,
+    "Application": true
 }
