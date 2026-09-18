@@ -30,7 +30,7 @@ class OtpMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your LoanEdge Verification Code',
+            subject: 'Your Verification Code — LoanEdge',
         );
     }
 

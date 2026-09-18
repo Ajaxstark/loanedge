@@ -33,7 +33,6 @@ class CustomerAuthController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Customer role hardcoded rakha hai -> koi khud se 'admin' role nahi bhej sakta
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
@@ -42,7 +41,6 @@ class CustomerAuthController extends Controller
             'is_verified' => false,
         ]);
 
-        // OTP generate karke email pe bhejo
         $this->otpService->generateAndSend($user->email);
 
         return response()->json([
@@ -52,7 +50,7 @@ class CustomerAuthController extends Controller
     }
 
     /**
-     * Step 2: Customer OTP verify karta hai -> account verified hota hai -> token milta hai (login ho jata hai)
+     * Step 2: Registration OTP verify karta hai -> account verified hota hai -> token milta hai
      */
     public function verifyOtp(Request $request)
     {
@@ -71,7 +69,6 @@ class CustomerAuthController extends Controller
             return response()->json(['message' => $result['message']], 422);
         }
 
-        // OTP sahi tha -> user ko verified mark karo
         $user = User::where('email', $request->email)->first();
         $user->update(['is_verified' => true]);
 
@@ -86,7 +83,7 @@ class CustomerAuthController extends Controller
     }
 
     /**
-     * Agar OTP expire ho gaya ya customer ko dobara chahiye, is se naya OTP bhej sakte hain
+     * Resend OTP - registration verification ke liye
      */
     public function resendOtp(Request $request)
     {
@@ -107,7 +104,8 @@ class CustomerAuthController extends Controller
     }
 
     /**
-     * Login -> sirf verified customer hi login kar payega
+     * Step 1 of Login: Email + Password check karo.
+     * Sahi hai toh token NAHI dete -> naya OTP bhejte hain (2FA).
      */
     public function login(Request $request)
     {
@@ -133,6 +131,44 @@ class CustomerAuthController extends Controller
                 'message' => 'Please verify your email before logging in.',
                 'is_verified' => false,
             ], 403);
+        }
+
+        // Password sahi hai -> ab login OTP bhejo (token abhi nahi denge)
+        $this->otpService->generateAndSend($user->email);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'OTP sent to your email. Please verify to complete login.',
+            'otp_required' => true,
+        ], 200);
+    }
+
+    /**
+     * Step 2 of Login: OTP verify karo -> ab token do (login complete)
+     */
+    public function verifyLoginOtp(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'otp' => 'required|digits:6',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $result = $this->otpService->verify($request->email, $request->otp);
+
+        if (!$result['success']) {
+            return response()->json(['message' => $result['message']], 422);
+        }
+
+        $user = User::where('email', $request->email)
+            ->where('role', 'customer')
+            ->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
