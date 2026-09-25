@@ -136,17 +136,14 @@ Lead → KYC → Underwriting → Approval → Loan Sanction → Disbursement �
 □ eSign for digital loan agreements
 
 ## 👨‍💻 Author
-
 **Vishal Negi**
 - 📧 Email: negi06343@gmail.com
 - 💼 [LinkedIn](https://www.linkedin.com/in/vishalnegi18)
 - 🐙 [GitHub](https://github.com/Ajaxstark)
 
 ## 📄 License
-
 This project is for **educational and portfolio purposes only**.
 
----
 
 ⭐ **If you find this project useful, please give it a star!**
 
