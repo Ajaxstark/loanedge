@@ -94,7 +94,7 @@ src/
 - Node.js 18+
 - MySQL
 
-### Backend Setup
+### Backend and Frontend Setup
 
 ```bash
 cd backend
