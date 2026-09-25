@@ -1,8 +1,8 @@
-import { useState } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useState } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import api from '../api/axios';
 
-/* ---------- Simple inline SVG icons (no extra packages needed) ---------- */
+/* ---------- Icons (same as before) ---------- */
 const MailIcon = () => (
   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
     <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -34,42 +34,57 @@ const EyeOffIcon = () => (
 );
 
 function Login() {
-  /* ---------- Form state ---------- */
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  /* Redirect to this path after login (default: /dashboard) */
+  const redirectTo = location.state?.from?.pathname || '/dashboard';
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [remember, setRemember] = useState(false);
 
-  /* ---------- UI state ---------- */
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-
-  /* ---------- Handle form submit ---------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError('');
 
     if (!email || !password) {
-      setError("Please enter both email and password.");
+      setError('Please enter both email and password.');
       return;
     }
 
     setLoading(true);
+
     try {
-      const { data } = await axios.post("http://localhost:8000/api/v1/login", {
+      /* Axios instance use karo — token automatically handle hoga */
+      const { data } = await api.post('/login', {
         email,
         password,
       });
 
-      // Save token based on "remember me"
+      /* Token save karo (remember me ke hisaab se) */
       const storage = remember ? localStorage : sessionStorage;
-      storage.setItem("token", data.token);
+      storage.setItem('token', data.token);
 
-      navigate("/dashboard");
+      /* User info bhi save kar sakte ho (optional) */
+      if (data.user) {
+        storage.setItem('user', JSON.stringify(data.user));
+      }
+
+      /* Login ke baad wapas usi page par jao jahan se aaye the */
+      navigate(redirectTo, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password.");
+      console.error('Login error:', err);
+
+      setError(
+        err.response?.data?.message ||
+          err.displayMessage ||
+          'Invalid email or password.'
+      );
     } finally {
       setLoading(false);
     }
@@ -124,7 +139,6 @@ function Login() {
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12">
           <div className="w-full max-w-sm">
 
-            {/* Mobile logo */}
             <div className="lg:hidden flex items-center gap-3 mb-8 justify-center">
               <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">LE</span>
@@ -143,7 +157,6 @@ function Login() {
 
             <form className="space-y-5" onSubmit={handleSubmit}>
 
-              {/* Email field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">
                   Email Address
@@ -162,7 +175,6 @@ function Login() {
                 </div>
               </div>
 
-              {/* Password field */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-sm font-medium text-gray-700">Password</label>
@@ -173,7 +185,7 @@ function Login() {
                     <LockIcon />
                   </span>
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter your password"
@@ -189,7 +201,6 @@ function Login() {
                 </div>
               </div>
 
-              {/* Remember me */}
               <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                 <input
                   type="checkbox"
@@ -200,7 +211,6 @@ function Login() {
                 Keep me signed in
               </label>
 
-              {/* Submit button */}
               <button
                 type="submit"
                 disabled={loading}
@@ -209,16 +219,16 @@ function Login() {
                 {loading ? (
                   <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 ) : (
-                  "Sign In"
+                  'Sign In'
                 )}
               </button>
             </form>
 
             <p className="text-center text-sm text-gray-500 mt-8">
-              Don't have an account?{" "}
-              <a href="#" className="text-blue-600 font-medium hover:underline">
-                Contact Admin
-              </a>
+              Don't have an account?{' '}
+              <Link to="/customer/register" className="text-blue-600 font-medium hover:underline">
+                Register as Customer
+              </Link>
             </p>
           </div>
         </div>
