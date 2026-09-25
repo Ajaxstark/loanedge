@@ -30,7 +30,7 @@ class EmiController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $schedule
+            'data' => $schedule,
         ]);
     }
 
@@ -40,10 +40,11 @@ class EmiController extends Controller
         $loan = Loan::findOrFail($loanId);
 
         $exists = EmiSchedule::where('loan_id', $loanId)->exists();
+
         if ($exists) {
             return response()->json([
                 'success' => false,
-                'message' => 'EMI schedule already generated for this loan'
+                'message' => 'EMI schedule already generated for this loan.',
             ], 422);
         }
 
@@ -51,26 +52,50 @@ class EmiController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'EMI schedule generated',
-            'data' => $schedule
+            'message' => 'EMI schedule generated successfully.',
+            'data' => $schedule,
         ], 201);
     }
 
-    // Payment record karo (ek installment pay hua)
-    public function pay($id)
+    // Payment record karo (partial ya full)
+    public function pay(Request $request, $id)
     {
         $installment = EmiSchedule::findOrFail($id);
 
-        $installment->update([
-            'paid_amount' => $installment->emi_amount,
-            'paid_date' => now(),
-            'status' => 'paid',
+        $validated = $request->validate([
+            'amount' => 'required|numeric|min:0.01',
+            'paid_date' => 'nullable|date',
         ]);
+
+        try {
+            $updated = $this->emiService->recordPayment(
+                $installment,
+                (float) $validated['amount'],
+                $validated['paid_date'] ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment recorded successfully.',
+                'data' => $updated,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+    }
+
+    // Foreclosure amount calculate karo
+    public function foreclosure($loanId)
+    {
+        $loan = Loan::findOrFail($loanId);
+        $breakdown = $this->emiService->calculateForeclosureAmount($loan);
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment recorded',
-            'data' => $installment
+            'data' => $breakdown,
         ]);
     }
 }

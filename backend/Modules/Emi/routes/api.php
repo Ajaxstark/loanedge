@@ -8,4 +8,5 @@ Route::middleware(['auth:sanctum'])->prefix('v1')->group(function () {
     Route::get('emi/loan/{loanId}', [EmiController::class, 'index']);
     Route::post('emi/generate/{loanId}', [EmiController::class, 'generate']);
     Route::patch('emi/{id}/pay', [EmiController::class, 'pay']);
+    Route::get('emi/loan/{loanId}/foreclosure', [EmiController::class, 'foreclosure']);
 });
