@@ -5,12 +5,14 @@ namespace Modules\Application\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Modules\Application\Http\Requests\SubmitLoanApplicationRequest;
 use Modules\Application\Http\Requests\UpdateAddressDetailsRequest;
 use Modules\Application\Http\Requests\UpdateEmploymentDetailsRequest;
 use Modules\Application\Http\Requests\UpdateLoanDetailsRequest;
 use Modules\Application\Http\Requests\UpdatePersonalDetailsRequest;
 use Modules\Application\Http\Requests\UploadApplicationDocumentRequest;
 use Modules\Application\Models\LoanApplication;
+use Modules\Application\Services\ApplicationSubmissionService;
 use Modules\KYC\Models\Document;
 use Modules\Product\Models\LoanProduct;
 
@@ -43,7 +45,7 @@ class CustomerApplicationController extends Controller
                     'product',
                     'lead',
                 ]),
-            ], 200);
+            ]);
         }
 
         $application = LoanApplication::create([
@@ -66,7 +68,7 @@ class CustomerApplicationController extends Controller
     }
 
     /**
-     * Logged-in customer ki latest application.
+     * Logged-in customer's latest application.
      */
     public function current(Request $request)
     {
@@ -90,11 +92,11 @@ class CustomerApplicationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $application,
-        ], 200);
+        ]);
     }
 
     /**
-     * Customer portal ke liye active loan products.
+     * Active products available in Customer Portal.
      */
     public function products(Request $request)
     {
@@ -123,27 +125,19 @@ class CustomerApplicationController extends Controller
         return response()->json([
             'success' => true,
             'data' => $products,
-        ], 200);
+        ]);
     }
 
     /**
-     * Step 1 — Personal Details
+     * Step 1 — Personal Details.
      */
     public function updatePersonalDetails(
         UpdatePersonalDetailsRequest $request
     ) {
-        $user = $request->user();
-
-        $application = LoanApplication::where('user_id', $user->id)
-            ->where('status', 'draft')
-            ->latest()
-            ->first();
+        $application = $this->getDraftApplication($request);
 
         if (!$application) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No draft loan application was found.',
-            ], 404);
+            return $this->draftNotFoundResponse();
         }
 
         $validated = $request->validated();
@@ -160,27 +154,19 @@ class CustomerApplicationController extends Controller
             'success' => true,
             'message' => 'Personal details saved successfully.',
             'data' => $application->fresh(),
-        ], 200);
+        ]);
     }
 
     /**
-     * Step 2 — Identity & Address Details
+     * Step 2 — Identity & Address Details.
      */
     public function updateAddressDetails(
         UpdateAddressDetailsRequest $request
     ) {
-        $user = $request->user();
-
-        $application = LoanApplication::where('user_id', $user->id)
-            ->where('status', 'draft')
-            ->latest()
-            ->first();
+        $application = $this->getDraftApplication($request);
 
         if (!$application) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No draft loan application was found.',
-            ], 404);
+            return $this->draftNotFoundResponse();
         }
 
         $validated = $request->validated();
@@ -199,27 +185,19 @@ class CustomerApplicationController extends Controller
             'success' => true,
             'message' => 'Identity and address details saved successfully.',
             'data' => $application->fresh(),
-        ], 200);
+        ]);
     }
 
     /**
-     * Step 3 — Employment & Financial Details
+     * Step 3 — Employment & Financial Details.
      */
     public function updateEmploymentDetails(
         UpdateEmploymentDetailsRequest $request
     ) {
-        $user = $request->user();
-
-        $application = LoanApplication::where('user_id', $user->id)
-            ->where('status', 'draft')
-            ->latest()
-            ->first();
+        $application = $this->getDraftApplication($request);
 
         if (!$application) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No draft loan application was found.',
-            ], 404);
+            return $this->draftNotFoundResponse();
         }
 
         $validated = $request->validated();
@@ -237,27 +215,19 @@ class CustomerApplicationController extends Controller
             'success' => true,
             'message' => 'Employment and financial details saved successfully.',
             'data' => $application->fresh(),
-        ], 200);
+        ]);
     }
 
     /**
-     * Step 4 — Loan / Product Details
+     * Step 4 — Loan / Product Details.
      */
     public function updateLoanDetails(
         UpdateLoanDetailsRequest $request
     ) {
-        $user = $request->user();
-
-        $application = LoanApplication::where('user_id', $user->id)
-            ->where('status', 'draft')
-            ->latest()
-            ->first();
+        $application = $this->getDraftApplication($request);
 
         if (!$application) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No draft loan application was found.',
-            ], 404);
+            return $this->draftNotFoundResponse();
         }
 
         $validated = $request->validated();
@@ -313,11 +283,11 @@ class CustomerApplicationController extends Controller
             'success' => true,
             'message' => 'Loan details saved successfully.',
             'data' => $application->fresh()->load('product'),
-        ], 200);
+        ]);
     }
 
     /**
-     * Step 5 — Customer ke uploaded documents.
+     * Step 5 — Customer's uploaded documents.
      */
     public function documents(Request $request)
     {
@@ -341,24 +311,104 @@ class CustomerApplicationController extends Controller
             ], 404);
         }
 
-        $documents = Document::where(
-            'application_id',
-            $application->id
-        )
+        $documents = Document::where('application_id', $application->id)
             ->latest()
             ->get();
 
         return response()->json([
             'success' => true,
             'data' => $documents,
-        ], 200);
+        ]);
     }
 
     /**
-     * Step 5 — Upload / replace KYC document.
+     * Step 5 — Upload / replace customer document.
      */
     public function uploadDocument(
         UploadApplicationDocumentRequest $request
+    ) {
+        $application = $this->getDraftApplication($request);
+
+        if (!$application) {
+            return $this->draftNotFoundResponse();
+        }
+
+        $validated = $request->validated();
+
+        $existingDocument = Document::where(
+            'application_id',
+            $application->id
+        )
+            ->where('document_type', $validated['document_type'])
+            ->latest()
+            ->first();
+
+        if (
+            $existingDocument &&
+            $existingDocument->status === 'approved'
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This document has already been approved and cannot be replaced.',
+            ], 422);
+        }
+
+        $newPath = $request
+            ->file('file')
+            ->store('kyc_documents', 'public');
+
+        if ($existingDocument) {
+            $oldPath = $existingDocument->file_path;
+
+            $existingDocument->update([
+                'file_path' => $newPath,
+                'status' => 'pending',
+                'remarks' => null,
+            ]);
+
+            if (
+                $oldPath &&
+                Storage::disk('public')->exists($oldPath)
+            ) {
+                Storage::disk('public')->delete($oldPath);
+            }
+
+            $document = $existingDocument->fresh();
+
+            $message =
+                'Document replaced successfully and submitted for verification.';
+
+            $statusCode = 200;
+        } else {
+            $document = Document::create([
+                'application_id' => $application->id,
+                'lead_id' => $application->lead_id,
+                'document_type' => $validated['document_type'],
+                'file_path' => $newPath,
+                'status' => 'pending',
+            ]);
+
+            $message = 'Document uploaded successfully.';
+            $statusCode = 201;
+        }
+
+        $application->update([
+            'current_step' => max($application->current_step, 6),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => $document,
+        ], $statusCode);
+    }
+
+    /**
+     * Step 6 — Final Review & Submit.
+     */
+    public function submit(
+        SubmitLoanApplicationRequest $request,
+        ApplicationSubmissionService $submissionService
     ) {
         $user = $request->user();
 
@@ -374,92 +424,50 @@ class CustomerApplicationController extends Controller
             ], 404);
         }
 
-        $validated = $request->validated();
-
-        $existingDocument = Document::where(
-            'application_id',
-            $application->id
-        )
-            ->where(
-                'document_type',
-                $validated['document_type']
-            )
-            ->latest()
-            ->first();
-
         /*
-         * Staff-approved document customer silently replace
-         * nahi kar sakta.
-         */
-        if (
-            $existingDocument &&
-            $existingDocument->status === 'approved'
-        ) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This document has already been approved and cannot be replaced.',
-            ], 422);
-        }
-
-        /*
-         * Pehle new file safely store karte hain.
-         */
-        $newPath = $request
-            ->file('file')
-            ->store('kyc_documents', 'public');
-
-        if ($existingDocument) {
-            $oldPath = $existingDocument->file_path;
-
-            $existingDocument->update([
-                'file_path' => $newPath,
-                'status' => 'pending',
-                'remarks' => null,
-            ]);
-
-            /*
-             * Database successfully update hone ke baad
-             * old physical file remove.
-             */
-            if (
-                $oldPath &&
-                Storage::disk('public')->exists($oldPath)
-            ) {
-                Storage::disk('public')->delete($oldPath);
-            }
-
-            $document = $existingDocument->fresh();
-
-            $message =
-                'Document replaced successfully and submitted for verification.';
-        } else {
-            $document = Document::create([
-                'application_id' => $application->id,
-                'lead_id' => $application->lead_id,
-                'document_type' => $validated['document_type'],
-                'file_path' => $newPath,
-                'status' => 'pending',
-            ]);
-
-            $message = 'Document uploaded successfully.';
-        }
-
-        /*
-         * Documents step reached.
+         * FormRequest already confirms that the customer
+         * explicitly accepted the declaration.
          *
-         * Step 6 = Review & Submit.
+         * Service performs final completeness checks,
+         * product validation, document checks,
+         * Lead creation and transactional submission.
          */
-        $application->update([
-            'current_step' => max(
-                $application->current_step,
-                6
-            ),
-        ]);
+        $submittedApplication = $submissionService->submit(
+            $application
+        );
 
         return response()->json([
             'success' => true,
-            'message' => $message,
-            'data' => $document,
-        ], $existingDocument ? 200 : 201);
+            'message' => 'Your loan application has been submitted successfully.',
+            'data' => $submittedApplication,
+        ]);
+    }
+
+    /**
+     * Logged-in customer's current draft.
+     *
+     * Same ownership query multiple methods mein repeat ho rahi thi,
+     * isliye small private helper.
+     */
+    private function getDraftApplication(Request $request)
+    {
+        return LoanApplication::where(
+            'user_id',
+            $request->user()->id
+        )
+            ->where('status', 'draft')
+            ->latest()
+            ->first();
+    }
+
+    /**
+     * Common response when no editable draft exists.
+     */
+    private function draftNotFoundResponse()
+    {
+        return response()->json([
+            'success' => false,
+            'message' => 'No draft loan application was found.',
+        ], 404);
     }
 }

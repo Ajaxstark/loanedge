@@ -42,7 +42,6 @@ Route::middleware(['auth:sanctum'])
             [CustomerApplicationController::class, 'updateLoanDetails']
         );
 
-        // Step 5 — Documents
         Route::get(
             'application/documents',
             [CustomerApplicationController::class, 'documents']
@@ -51,5 +50,13 @@ Route::middleware(['auth:sanctum'])
         Route::post(
             'application/documents',
             [CustomerApplicationController::class, 'uploadDocument']
+        );
+
+        /*
+         * Step 6 — Final Submission
+         */
+        Route::post(
+            'application/submit',
+            [CustomerApplicationController::class, 'submit']
         );
     });
